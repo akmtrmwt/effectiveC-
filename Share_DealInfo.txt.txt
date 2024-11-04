@@ -2,8 +2,42 @@ Option Explicit
 
 Private Const BasePath As String = "C:\Users\Share_DealInfo\Collections\"
 
+' Windows APIを使用してユーザー名を取得する関数
+Private Declare PtrSafe Function GetUserName Lib "advapi32.dll" Alias "GetUserNameA" _
+    (ByVal lpBuffer As String, ByRef nSize As Long) As Long
+
+' 現在のユーザー名を取得する関数
+Public Function GetCurrentUserName() As String
+    Dim buffer As String * 255
+    Dim size As Long
+    size = 255
+    If GetUserName(buffer, size) Then
+        GetCurrentUserName = Left(buffer, size - 1)
+    Else
+        GetCurrentUserName = ""
+    End If
+End Function
+
+' CreaterNameがCommonもしくは現在のユーザー名かどうかをチェックする関数
+Private Function IsAuthorizedUser(ByVal CreaterName As String) As Boolean
+    Dim currentUserName As String
+    currentUserName = GetCurrentUserName()
+    
+    If CreaterName = "Common" Or CreaterName = currentUserName Then
+        IsAuthorizedUser = True
+    Else
+        IsAuthorizedUser = False
+    End If
+End Function
+
 ' DealInfoの追加サブプロシージャ
-Public Sub AddDealInfo(CreaterName As String, DealInfoName As String, DealInfo As Range)
+Public Sub AddDealInfo(ByVal CreaterName As String, ByVal DealInfoName As String, ByVal DealInfo As Range)
+    ' ユーザーの権限をチェック
+    If Not IsAuthorizedUser(CreaterName) Then
+        MsgBox "Error: このフォルダにはアクセス権限がありません。", vbExclamation
+        Exit Sub
+    End If
+    
     Dim folderPath As String
     Dim filePath As String
     folderPath = BasePath & CreaterName & "\"
@@ -33,7 +67,13 @@ Public Sub AddDealInfo(CreaterName As String, DealInfoName As String, DealInfo A
 End Sub
 
 ' DealInfoのリセットサブプロシージャ
-Public Sub ResetDealInfo(CreaterName As String, DealInfoName As String, NewDealInfo As Range)
+Public Sub ResetDealInfo(ByVal CreaterName As String, ByVal DealInfoName As String, ByVal NewDealInfo As Range)
+    ' ユーザーの権限をチェック
+    If Not IsAuthorizedUser(CreaterName) Then
+        MsgBox "Error: このフォルダにはアクセス権限がありません。", vbExclamation
+        Exit Sub
+    End If
+    
     Dim folderPath As String
     Dim filePath As String
     folderPath = BasePath & CreaterName & "\"
@@ -67,7 +107,13 @@ Public Sub ResetDealInfo(CreaterName As String, DealInfoName As String, NewDealI
 End Sub
 
 ' DealInfoの削除サブプロシージャ
-Public Sub DeleteDealInfo(CreaterName As String, DealInfoName As String)
+Public Sub DeleteDealInfo(ByVal CreaterName As String, ByVal DealInfoName As String)
+    ' ユーザーの権限をチェック
+    If Not IsAuthorizedUser(CreaterName) Then
+        MsgBox "Error: このフォルダにはアクセス権限がありません。", vbExclamation
+        Exit Sub
+    End If
+    
     Dim filePath As String
     filePath = BasePath & CreaterName & "\" & DealInfoName & ".txt"
     
@@ -89,7 +135,7 @@ Public Sub DeleteDealInfo(CreaterName As String, DealInfoName As String)
 End Sub
 
 ' DealInfoの取得サブプロシージャ
-Public Sub GetDealInfo(CreaterName As String, DealInfoName As String, targetRange As Range)
+Public Sub GetDealInfo(ByVal CreaterName As String, ByVal DealInfoName As String, ByVal targetRange As Range)
     Dim filePath As String
     filePath = BasePath & CreaterName & "\" & DealInfoName & ".txt"
     
