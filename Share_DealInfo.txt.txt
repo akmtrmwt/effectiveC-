@@ -1,0 +1,116 @@
+Option Explicit
+
+Private Const BasePath As String = "C:\Users\Share_DealInfo\Collections\"
+
+' DealInfoの追加サブプロシージャ
+Public Sub AddDealInfo(CreaterName As String, DealInfoName As String, DealInfo As Range)
+    Dim folderPath As String
+    Dim filePath As String
+    folderPath = BasePath & CreaterName & "\"
+    filePath = folderPath & DealInfoName & ".txt"
+    
+    ' フォルダが存在しない場合は作成
+    If Dir(folderPath, vbDirectory) = "" Then
+        MkDir folderPath
+    End If
+    
+    ' 同じ名前のファイルがある場合はエラーメッセージを表示して終了
+    If Dir(filePath) <> "" Then
+        MsgBox "Error: ファイルは既に存在します。", vbExclamation
+        Exit Sub
+    End If
+    
+    ' DealInfoをファイルに書き込む
+    Dim fileNum As Integer
+    fileNum = FreeFile
+    Open filePath For Output As #fileNum
+    Dim cell As Range
+    For Each cell In DealInfo
+        Print #fileNum, cell.Value
+    Next cell
+    Close #fileNum
+    MsgBox "DealInfoが正常に追加されました。"
+End Sub
+
+' DealInfoのリセットサブプロシージャ
+Public Sub ResetDealInfo(CreaterName As String, DealInfoName As String, NewDealInfo As Range)
+    Dim folderPath As String
+    Dim filePath As String
+    folderPath = BasePath & CreaterName & "\"
+    filePath = folderPath & DealInfoName & ".txt"
+    
+    ' フォルダが存在しない場合は作成
+    If Dir(folderPath, vbDirectory) = "" Then
+        MkDir folderPath
+    End If
+    
+    ' ファイルが存在する場合は更新の確認
+    If Dir(filePath) <> "" Then
+        Dim response As VbMsgBoxResult
+        response = MsgBox("同じ名前のファイルがあります。更新してもよろしいですか？", vbYesNo)
+        If response = vbNo Then
+            MsgBox "更新がキャンセルされました。"
+            Exit Sub
+        End If
+    End If
+    
+    ' NewDealInfoをファイルに書き込む
+    Dim fileNum As Integer
+    fileNum = FreeFile
+    Open filePath For Output As #fileNum
+    Dim cell As Range
+    For Each cell In NewDealInfo
+        Print #fileNum, cell.Value
+    Next cell
+    Close #fileNum
+    MsgBox "DealInfoが正常にリセットされました。"
+End Sub
+
+' DealInfoの削除サブプロシージャ
+Public Sub DeleteDealInfo(CreaterName As String, DealInfoName As String)
+    Dim filePath As String
+    filePath = BasePath & CreaterName & "\" & DealInfoName & ".txt"
+    
+    ' ファイルが存在しない場合はエラーメッセージを表示して終了
+    If Dir(filePath) = "" Then
+        MsgBox "Error: ファイルが見つかりません。", vbExclamation
+        Exit Sub
+    End If
+    
+    ' 削除の確認
+    Dim response As VbMsgBoxResult
+    response = MsgBox("ファイルを削除してもよろしいですか？", vbYesNo)
+    If response = vbYes Then
+        Kill filePath
+        MsgBox "DealInfoが正常に削除されました。"
+    Else
+        MsgBox "削除がキャンセルされました。"
+    End If
+End Sub
+
+' DealInfoの取得サブプロシージャ
+Public Sub GetDealInfo(CreaterName As String, DealInfoName As String, targetRange As Range)
+    Dim filePath As String
+    filePath = BasePath & CreaterName & "\" & DealInfoName & ".txt"
+    
+    ' ファイルが存在しない場合はエラーメッセージを表示して終了
+    If Dir(filePath) = "" Then
+        MsgBox "Error: ファイルが見つかりません。", vbExclamation
+        Exit Sub
+    End If
+    
+    ' ファイルの内容を読み取って、ExcelシートのtargetRangeに貼り付け
+    Dim fileNum As Integer
+    Dim content As String
+    Dim i As Integer
+    fileNum = FreeFile
+    Open filePath For Input As #fileNum
+    i = 0
+    Do Until EOF(fileNum)
+        Line Input #fileNum, content
+        targetRange.Cells(i + 1, 1).Value = content
+        i = i + 1
+    Loop
+    Close #fileNum
+    MsgBox "DealInfoが正常に取得されました。"
+End Sub
